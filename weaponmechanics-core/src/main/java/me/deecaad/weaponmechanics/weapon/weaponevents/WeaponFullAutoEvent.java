@@ -27,12 +27,17 @@ public class WeaponFullAutoEvent extends WeaponEvent implements Cancellable {
 
     private static final HandlerList HANDLERS = new HandlerList();
 
-    private int shotsPerSecond;
+    private double shotsPerSecondDouble;
 
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public WeaponFullAutoEvent(String weaponTitle, ItemStack weaponStack, LivingEntity shooter, EquipmentSlot hand, int shotsPerSecond) {
+        this(weaponTitle, weaponStack, shooter, hand, (double) shotsPerSecond);
+    }
+
+    public WeaponFullAutoEvent(String weaponTitle, ItemStack weaponStack, LivingEntity shooter, EquipmentSlot hand, double shotsPerSecond) {
         super(weaponTitle, weaponStack, shooter, hand);
 
-        this.shotsPerSecond = shotsPerSecond;
+        this.shotsPerSecondDouble = shotsPerSecond;
     }
 
     /**
@@ -44,9 +49,25 @@ public class WeaponFullAutoEvent extends WeaponEvent implements Cancellable {
      * 1-20, but can be any integer.
      *
      * @return the rate of fire in shots per second
+     * @deprecated Since 4.3.0, use {@link #getShotsPerSecondDouble()} for decimal support.
      */
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public int getShotsPerSecond() {
-        return shotsPerSecond;
+        return (int) shotsPerSecondDouble;
+    }
+
+    /**
+     * Gets the rate of fire in shots per second. This is the number of shots that will be fired every
+     * second. For example, if this value is 13.5, then an average of 13.5 shots will be fired every second.
+     *
+     * <p>
+     * For semi and burst weapons, this value will be 0. A typical full auto weapon will use values
+     * 1-20, but can be any decimal value.
+     *
+     * @return the rate of fire in shots per second
+     */
+    public double getShotsPerSecondDouble() {
+        return shotsPerSecondDouble;
     }
 
     /**
@@ -58,9 +79,25 @@ public class WeaponFullAutoEvent extends WeaponEvent implements Cancellable {
      * use burst/semi.
      *
      * @param shotsPerSecond the rate of fire in shots per second
+     * @deprecated Since 4.3.0, use {@link #setShotsPerSecondDouble(double)} for decimal support.
      */
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public void setShotsPerSecond(int shotsPerSecond) {
-        this.shotsPerSecond = shotsPerSecond;
+        this.shotsPerSecondDouble = shotsPerSecond;
+    }
+
+    /**
+     * Sets the rate of fire in shots per second. This is the number of shots that will be fired every
+     * second. For example, if this value is 13.5, then an average of 13.5 shots will be fired every second.
+     *
+     * <p>
+     * If you set this value to 0, the full auto attempt will be cancelled, and the handler will try to
+     * use burst/semi.
+     *
+     * @param shotsPerSecond the rate of fire in shots per second
+     */
+    public void setShotsPerSecondDouble(double shotsPerSecond) {
+        this.shotsPerSecondDouble = shotsPerSecond;
     }
 
     @Override
@@ -74,8 +111,7 @@ public class WeaponFullAutoEvent extends WeaponEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        // Full auto rate is 0, so full auto is not used
-        return getShotsPerSecond() == 0;
+        return shotsPerSecondDouble == 0;
     }
 
     @Override
@@ -83,11 +119,11 @@ public class WeaponFullAutoEvent extends WeaponEvent implements Cancellable {
     public void setCancelled(boolean cancel) {
         // Since the cancellation state depends on an integer, using setCancelled=true
         // does not make sense... That is why this method is deprecated. Use
-        // #setShotsPerSecond instead.
+        // #setShotsPerSecondDouble instead.
         if (cancel) {
-            setShotsPerSecond(0);
+            setShotsPerSecondDouble(0);
         } else {
-            setShotsPerSecond(1); // BAD TERRIBLE HACK, DO NOT USE
+            setShotsPerSecondDouble(1); // BAD TERRIBLE HACK, DO NOT USE
         }
     }
 }

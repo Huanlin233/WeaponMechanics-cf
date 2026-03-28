@@ -341,7 +341,7 @@ public class ShootHandler implements IValidator, TriggerListener {
 
     private boolean fullAutoShot(EntityWrapper entityWrapper, String weaponTitle, ItemStack weaponStack, HandData handData, EquipmentSlot slot, TriggerType triggerType, boolean dualWield) {
         Configuration config = WeaponMechanics.getInstance().getWeaponConfigurations();
-        int fullyAutomaticShotsPerSecond = config.getInt(weaponTitle + ".Shoot.Fully_Automatic_Shots_Per_Second");
+        double fullyAutomaticShotsPerSecond = config.getDouble(weaponTitle + ".Shoot.Fully_Automatic_Shots_Per_Second");
 
         // Call event before checking if full auto is used, so weapons can be converted to Full Auto
         WeaponFullAutoEvent event = new WeaponFullAutoEvent(weaponTitle, weaponStack, entityWrapper.getEntity(), slot, fullyAutomaticShotsPerSecond);
@@ -353,7 +353,7 @@ public class ShootHandler implements IValidator, TriggerListener {
 
         boolean mainhand = slot == EquipmentSlot.HAND;
 
-        FullAutoTask fullAutoTask = new FullAutoTask(weaponHandler, entityWrapper, weaponTitle, weaponStack, mainhand, triggerType, dualWield, event.getShotsPerSecond());
+        FullAutoTask fullAutoTask = new FullAutoTask(weaponHandler, entityWrapper, weaponTitle, weaponStack, mainhand, triggerType, dualWield, event.getShotsPerSecondDouble());
         TaskImplementation<Void> task = WeaponMechanics.getInstance().getFoliaScheduler().entity(entityWrapper.getEntity()).runAtFixedRate(fullAutoTask, 1, 1);
         handData.setFullAutoTask(fullAutoTask, task);
         return true;
@@ -739,10 +739,9 @@ public class ShootHandler implements IValidator, TriggerListener {
         // E.g. 80 -> 4.0
         configuration.set(data.getKey() + ".Projectile_Speed", projectileSpeed / 20);
 
-        int delayBetweenShots = data.of("Delay_Between_Shots").assertRange(0, null).getInt().orElse(0);
+        double delayBetweenShots = data.of("Delay_Between_Shots").assertRange(0.0, null).getDouble().orElse(0.0);
         if (delayBetweenShots != 0) {
-            // Convert to millis
-            configuration.set(data.getKey() + ".Delay_Between_Shots", delayBetweenShots * 50);
+            configuration.set(data.getKey() + ".Delay_Between_Shots", (long)(delayBetweenShots * 50));
         }
 
         int projectilesPerShot = data.of("Projectiles_Per_Shot").assertRange(1, 100).getInt().orElse(1);
@@ -757,7 +756,7 @@ public class ShootHandler implements IValidator, TriggerListener {
             hasBurst = true;
         }
 
-        int fullyAutomaticShotsPerSecond = data.of("Fully_Automatic_Shots_Per_Second").assertRange(0, 120).getInt().orElse(0);
+        double fullyAutomaticShotsPerSecond = data.of("Fully_Automatic_Shots_Per_Second").assertRange(0.0, 120.0).getDouble().orElse(0.0);
         if (fullyAutomaticShotsPerSecond != 0) {
             hasAuto = true;
         }

@@ -229,6 +229,18 @@ public final class WeaponMechanicsAPI {
      * @return <code>true</code> if the full auto rate was set.
      */
     public static boolean setFullAutoShotsPerSecond(@NotNull LivingEntity entity, int shotsPerSecond) {
+        return setFullAutoShotsPerSecond(entity, (double) shotsPerSecond);
+    }
+
+    /**
+     * Attempts to set the full auto rate for the given entity. Will try to use the mainhand first, then
+     * the offhand. Use shotsPerSecond=0 to stop the full auto.
+     *
+     * @param entity The non-null entity to set the full auto rate for.
+     * @param shotsPerSecond The non-negative shots per second to set.
+     * @return <code>true</code> if the full auto rate was set.
+     */
+    public static boolean setFullAutoShotsPerSecond(@NotNull LivingEntity entity, double shotsPerSecond) {
         EntityWrapper wrapper = WeaponMechanics.getInstance().getEntityWrapper(entity, true);
         if (wrapper == null)
             return true;
@@ -248,8 +260,21 @@ public final class WeaponMechanicsAPI {
      * @param hand The non-null hand to set the full auto rate for.
      * @param shotsPerSecond The non-negative shots per second to set.
      * @return <code>true</code> if the full auto rate was set.
+     * @deprecated Since 4.3.0, use {@link #setFullAutoShotsPerSecond(HandData, double)} for decimal support.
      */
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public static boolean setFullAutoShotsPerSecond(@NotNull HandData hand, int shotsPerSecond) {
+        return setFullAutoShotsPerSecond(hand, (double) shotsPerSecond);
+    }
+
+    /**
+     * Attempts to set the full auto rate for the given hand.
+     *
+     * @param hand The non-null hand to set the full auto rate for.
+     * @param shotsPerSecond The non-negative shots per second to set.
+     * @return <code>true</code> if the full auto rate was set.
+     */
+    public static boolean setFullAutoShotsPerSecond(@NotNull HandData hand, double shotsPerSecond) {
         FullAutoTask fullAutoTask = hand.getFullAutoTask();
         if (fullAutoTask == null)
             return false;
@@ -263,8 +288,7 @@ public final class WeaponMechanicsAPI {
         }
 
         // Set the new shotsPerSecond
-        fullAutoTask.setPerShot(shotsPerSecond / 20);
-        fullAutoTask.setRate(shotsPerSecond % 20);
+        fullAutoTask.setShotsPerSecondDouble(shotsPerSecond);
         return true;
     }
 

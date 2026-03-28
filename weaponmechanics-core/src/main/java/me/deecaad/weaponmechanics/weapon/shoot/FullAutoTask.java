@@ -52,7 +52,10 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
      * 
      * </blockquote>
      * <p>
+     * 
+     * @deprecated Since 4.3.0, use accumulator-based algorithm instead for decimal support.
      */
+    @Deprecated(since = "4.3.0", forRemoval = false)
     private static final int[][] AUTO = new int[][]{
             {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // 0 perfect
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // 1 good
@@ -85,8 +88,14 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
     private final HandData handData;
     private final String weaponTitle;
     private final ItemStack weaponStack;
+    
+    @Deprecated(since = "4.3.0", forRemoval = false)
     private int rate; // A number 1-20, the number of shots per second
+    @Deprecated(since = "4.3.0", forRemoval = false)
     private int perShot; // the number of shots per tick to add, when rate > 20
+
+    private double shotsPerSecondDouble;
+    private double accumulator;
 
     // Values from config
     private final Trigger trigger;
@@ -94,10 +103,17 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
     private final int ammoPerShot;
 
     // Updated in the run() method
+    @Deprecated(since = "4.3.0", forRemoval = false)
     private int currentTick;
 
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public FullAutoTask(WeaponHandler weaponHandler, EntityWrapper entityWrapper, String weaponTitle, ItemStack weaponStack, boolean mainHand, TriggerType triggerType, boolean dualWield,
         int shotsPerSecond) {
+        this(weaponHandler, entityWrapper, weaponTitle, weaponStack, mainHand, triggerType, dualWield, (double) shotsPerSecond);
+    }
+
+    public FullAutoTask(WeaponHandler weaponHandler, EntityWrapper entityWrapper, String weaponTitle, ItemStack weaponStack, boolean mainHand, TriggerType triggerType, boolean dualWield,
+        double shotsPerSecond) {
         this.weaponHandler = weaponHandler;
         this.entityWrapper = entityWrapper;
         this.mainHand = mainHand;
@@ -107,8 +123,10 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
         this.weaponTitle = weaponTitle;
         this.weaponStack = weaponStack;
 
-        this.rate = shotsPerSecond % 20;
-        this.perShot = shotsPerSecond / 20;
+        this.rate = (int) shotsPerSecond % 20;
+        this.perShot = (int) shotsPerSecond / 20;
+        this.shotsPerSecondDouble = shotsPerSecond;
+        this.accumulator = 0.0;
 
         trigger = WeaponMechanics.getInstance().getWeaponConfigurations().getObject(weaponTitle + ".Shoot.Trigger", Trigger.class);
         consumeItemOnShoot = WeaponMechanics.getInstance().getWeaponConfigurations().getBoolean(weaponTitle + ".Shoot.Consume_Item_On_Shoot");
@@ -123,10 +141,12 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
         return handData;
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public int getRate() {
         return rate;
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public void setRate(int rate) {
         if (rate < 0 || rate > 20)
             throw new IllegalArgumentException("rate must be [0, 20]");
@@ -134,10 +154,12 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
         this.rate = rate;
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public int getPerShot() {
         return perShot;
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public void setPerShot(int perShot) {
         if (perShot < 0)
             throw new IllegalArgumentException("perShot must be positive");
@@ -145,10 +167,22 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
         this.perShot = perShot;
     }
 
+    public double getShotsPerSecondDouble() {
+        return shotsPerSecondDouble;
+    }
+
+    public void setShotsPerSecondDouble(double shotsPerSecond) {
+        this.shotsPerSecondDouble = shotsPerSecond;
+        this.rate = (int) shotsPerSecond % 20;
+        this.perShot = (int) shotsPerSecond / 20;
+    }
+
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public int getCurrentTick() {
         return currentTick;
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = false)
     public void setCurrentTick(int currentTick) {
         this.currentTick = currentTick;
     }
@@ -183,9 +217,7 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
             return;
         }
 
-        // Determine if we should shoot on this tick. The AUTO array is a table of basically true/false
-        // values.
-        int shootAmount = perShot + AUTO[rate][currentTick];
+        int shootAmount = calculateShootAmount();
 
         // START RELOAD STUFF
         if (ammoLeft != -1) {
@@ -218,9 +250,28 @@ public class FullAutoTask implements Consumer<TaskImplementation<Void>> {
         increment();
     }
 
+    private int calculateShootAmount() {
+        int shootAmount = 0;
+        
+        if (shotsPerSecondDouble >= 20.0) {
+            shootAmount += (int)(shotsPerSecondDouble / 20.0);
+        }
+        
+        accumulator += shotsPerSecondDouble / 20.0;
+        while (accumulator >= 1.0) {
+            accumulator -= 1.0;
+            shootAmount++;
+        }
+        
+        return shootAmount;
+    }
+
     /**
      * Increments the current tick, and resets it to 0 if it is 20.
+     * 
+     * @deprecated Since 4.3.0, no longer needed for accumulator algorithm.
      */
+    @Deprecated(since = "4.3.0", forRemoval = false)
     private void increment() {
         currentTick++;
         if (currentTick >= 20) {
